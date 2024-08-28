@@ -1,6 +1,6 @@
 # Simple PyTorch As-Rigid-As-Possible Energy
 
-This is a simple PyTorch implementation of the As-Rigid-As-Possible energy for mesh deformation.
+This is a simple PyTorch implementation of the As-Rigid-As-Possible energy (Sorkine and Alexa, 2007).
 
 ## Installation
 
