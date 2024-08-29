@@ -52,7 +52,7 @@ class ARAPLoss(nn.Module):
     Only SPOKES_AND_RIMS ARAP loss for 3D triangle mesh is supported.
     """
 
-    def __init__(self, V: np.ndarray, F: np.ndarray):
+    def __init__(self, V: np.ndarray, F: np.ndarray, device='cpu'):
         """
         :param V: Vertex (libigl-style)
         :param F: Face (libigl-style)
@@ -62,10 +62,10 @@ class ARAPLoss(nn.Module):
         self.V_numpy = V
         self.F_numpy = F
 
-        self.V_torch = torch.tensor(V, dtype=torch.float32)
-        self.F_torch = torch.tensor(F, dtype=torch.int64)
+        self.V_torch = torch.tensor(V, dtype=torch.float32).to(device)
+        self.F_torch = torch.tensor(F, dtype=torch.int64).to(device)
 
-        self.L = cotmatrix_entries(self.V_torch, self.F_torch)
+        self.L = cotmatrix_entries(self.V_torch, self.F_torch).to(device)
 
         # Element list & Edge weight list
         elem_list = [[] for _ in range(self.V_torch.shape[0])]
@@ -83,18 +83,18 @@ class ARAPLoss(nn.Module):
 
         max_elem_count = max([len(e) for e in elem_list])
 
-        self.elem_list_tensor = -torch.ones((self.V_torch.shape[0], max_elem_count, 2), dtype=torch.long)
-        self.weights_list_tensor = torch.zeros((self.V_torch.shape[0], max_elem_count), dtype=torch.float32)
+        self.elem_list_tensor = -torch.ones((self.V_torch.shape[0], max_elem_count, 2), dtype=torch.long).to(device)
+        self.weights_list_tensor = torch.zeros((self.V_torch.shape[0], max_elem_count), dtype=torch.float32).to(device)
 
         for i, (e, w) in enumerate(zip(elem_list, weights_list)):
-            self.elem_list_tensor[i, :len(e)] = torch.tensor(e)
-            self.weights_list_tensor[i, :len(w)] = torch.tensor(w)
+            self.elem_list_tensor[i, :len(e)] = torch.tensor(e).to(device)
+            self.weights_list_tensor[i, :len(w)] = torch.tensor(w).to(device)
 
-        self.elem_list_tensor = self.elem_list_tensor.to(self.V_torch.device)
-        self.weights_list_tensor = self.weights_list_tensor.to(self.V_torch.device)
+        self.elem_list_tensor = self.elem_list_tensor.to(device)
+        self.weights_list_tensor = self.weights_list_tensor.to(device)
 
-        self.elem_edge_vecs_rest = self.get_elem_edge_vecs(self.V_torch)
-        self.elem_weights = self.weights_list_tensor.unsqueeze(-1)
+        self.elem_edge_vecs_rest = self.get_elem_edge_vecs(self.V_torch).to(device)
+        self.elem_weights = self.weights_list_tensor.unsqueeze(-1).to(device)
 
     def get_elem_edge_vecs(self, V):
         e_start = V[self.elem_list_tensor[:, :, 0]]
